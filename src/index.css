@@ -1,0 +1,408 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* EcoFlow - Design System for Sustainable Logistics Platform */
+
+@layer base {
+  :root {
+    /* Core Brand Colors - Deep Forest & Earth Tones */
+    --background: 150 10% 98%;
+    --foreground: 160 25% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 160 25% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 160 25% 10%;
+
+    /* Primary - Forest Green */
+    --primary: 152 55% 28%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Earth Tone */
+    --secondary: 35 35% 92%;
+    --secondary-foreground: 35 40% 25%;
+
+    /* Muted - Soft Sage */
+    --muted: 150 15% 94%;
+    --muted-foreground: 150 10% 45%;
+
+    /* Accent - Teal */
+    --accent: 172 55% 40%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Success - Vibrant Green */
+    --success: 145 65% 42%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning - Warm Amber */
+    --warning: 38 92% 50%;
+    --warning-foreground: 38 92% 15%;
+
+    /* Destructive */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Info - Sky Blue */
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+
+    /* Chart Colors */
+    --chart-1: 152 55% 28%;
+    --chart-2: 172 55% 40%;
+    --chart-3: 145 65% 42%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 199 89% 48%;
+
+    /* Border & Input */
+    --border: 150 15% 88%;
+    --input: 150 15% 88%;
+    --ring: 152 55% 28%;
+
+    --radius: 0.75rem;
+
+    /* Sidebar */
+    --sidebar-background: 152 25% 12%;
+    --sidebar-foreground: 150 10% 95%;
+    --sidebar-primary: 152 55% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 152 20% 18%;
+    --sidebar-accent-foreground: 150 10% 95%;
+    --sidebar-border: 152 15% 20%;
+    --sidebar-ring: 152 55% 45%;
+
+    /* Custom Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(152 55% 28%) 0%, hsl(172 55% 40%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(152 55% 28%) 0%, hsl(145 65% 42%) 50%, hsl(172 55% 40%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(150 15% 97%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(145 65% 42%) 0%, hsl(152 55% 35%) 100%);
+    --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%) 0%, hsl(25 85% 55%) 100%);
+    --gradient-sidebar: linear-gradient(180deg, hsl(152 25% 12%) 0%, hsl(152 30% 8%) 100%);
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(152 25% 10% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(152 25% 10% / 0.1), 0 2px 4px -2px hsl(152 25% 10% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(152 25% 10% / 0.1), 0 4px 6px -4px hsl(152 25% 10% / 0.1);
+    --shadow-xl: 0 20px 25px -5px hsl(152 25% 10% / 0.1), 0 8px 10px -6px hsl(152 25% 10% / 0.1);
+    --shadow-glow: 0 0 20px hsl(152 55% 28% / 0.15);
+    --shadow-card: 0 4px 20px hsl(152 25% 10% / 0.08);
+    --shadow-card-hover: 0 8px 30px hsl(152 25% 10% / 0.12);
+  }
+
+  .dark {
+    --background: 152 25% 6%;
+    --foreground: 150 10% 95%;
+
+    --card: 152 20% 10%;
+    --card-foreground: 150 10% 95%;
+
+    --popover: 152 20% 10%;
+    --popover-foreground: 150 10% 95%;
+
+    --primary: 152 55% 45%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 152 15% 18%;
+    --secondary-foreground: 150 10% 90%;
+
+    --muted: 152 15% 15%;
+    --muted-foreground: 150 10% 60%;
+
+    --accent: 172 50% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --success: 145 60% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 90% 55%;
+    --warning-foreground: 38 90% 10%;
+
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --info: 199 85% 55%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 152 15% 20%;
+    --input: 152 15% 20%;
+    --ring: 152 55% 45%;
+
+    --sidebar-background: 152 30% 6%;
+    --sidebar-foreground: 150 10% 95%;
+    --sidebar-primary: 152 55% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 152 20% 12%;
+    --sidebar-accent-foreground: 150 10% 95%;
+    --sidebar-border: 152 15% 15%;
+    --sidebar-ring: 152 55% 50%;
+    
+    --shadow-card: 0 4px 20px hsl(0 0% 0% / 0.3);
+    --shadow-card-hover: 0 8px 30px hsl(0 0% 0% / 0.4);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
+}
+
+@layer components {
+  /* Card Styles */
+  .eco-card {
+    @apply bg-card rounded-xl border border-border p-6;
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+
+  .eco-card:hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  .eco-card-gradient {
+    background: var(--gradient-card);
+    @apply rounded-xl border border-border p-6;
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Metric Card */
+  .metric-card {
+    @apply bg-card rounded-xl border border-border p-5 relative overflow-hidden;
+    box-shadow: var(--shadow-card);
+  }
+
+  .metric-card::before {
+    content: '';
+    @apply absolute top-0 left-0 w-1 h-full;
+    background: var(--gradient-primary);
+  }
+
+  /* Status Badges */
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+  }
+
+  .status-agendada {
+    @apply bg-info/10 text-info;
+  }
+
+  .status-em_transito {
+    @apply bg-warning/10 text-warning;
+  }
+
+  .status-coletada {
+    @apply bg-accent/10 text-accent;
+  }
+
+  .status-processando {
+    @apply bg-primary/10 text-primary;
+  }
+
+  .status-concluida {
+    @apply bg-success/10 text-success;
+  }
+
+  .status-cancelada {
+    @apply bg-destructive/10 text-destructive;
+  }
+
+  /* Material status */
+  .status-pendente {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  .status-processado {
+    @apply bg-primary/10 text-primary;
+  }
+
+  .status-destinado {
+    @apply bg-success/10 text-success;
+  }
+
+  /* Glass Effect */
+  .glass {
+    @apply bg-background/80 backdrop-blur-md border border-border/50;
+  }
+
+  /* Gradient Text */
+  .gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Hero Section */
+  .hero-gradient {
+    background: var(--gradient-hero);
+  }
+
+  /* Sidebar gradient */
+  .sidebar-gradient {
+    background: var(--gradient-sidebar);
+  }
+
+  /* Input Focus Ring */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background;
+  }
+
+  /* Eco Button Variants */
+  .btn-eco-primary {
+    background: var(--gradient-primary);
+    @apply text-primary-foreground font-medium py-2.5 px-5 rounded-lg;
+    box-shadow: var(--shadow-md);
+    transition: all 0.2s ease;
+  }
+
+  .btn-eco-primary:hover {
+    @apply opacity-90;
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-1px);
+  }
+
+  /* Eco Icon Button */
+  .icon-btn {
+    @apply p-2 rounded-lg transition-all duration-200;
+    @apply hover:bg-muted active:scale-95;
+  }
+
+  /* Animation Classes */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out forwards;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+  }
+
+  .animate-pulse-subtle {
+    animation: pulseSub 2s ease-in-out infinite;
+  }
+
+  /* Scrollbar Styling */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-muted/50 rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-primary/30 rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary/50;
+  }
+}
+
+@layer utilities {
+  /* Spacing utilities */
+  .section-padding {
+    @apply py-16 md:py-24;
+  }
+
+  .container-padding {
+    @apply px-4 md:px-6 lg:px-8;
+  }
+
+  /* Text utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Keyframe Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulseSub {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Loading Spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  @apply w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Page Transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms ease-out, transform 300ms ease-out;
+}
+
+/* Chart Customization */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: hsl(var(--border));
+}
+
+.recharts-text {
+  fill: hsl(var(--muted-foreground));
+  font-size: 12px;
+}
