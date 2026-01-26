@@ -26,16 +26,29 @@ export default function Materials() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: materials, isLoading } = useQuery({
-    queryKey: ['materials', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('materials')
-        .select(`
-          *,
-          category:material_categories(name, icon)
-        `)
-        .order('created_at', { ascending: false });
+    const { data: materials, isLoading } = useQuery({
+      queryKey: ['materials', user?.id],
+      queryFn: async () => {
+        const { data, error } = await supabase
+    .from('materials')
+    .select(`
+      id,
+      name,
+      description,
+      quantity,
+      unit,
+      weight_kg,
+      status,
+      created_at,
+      category:material_categories (
+        id,
+        name,
+        icon
+      )
+    `)
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
 
       if (error) throw error;
       return data;
