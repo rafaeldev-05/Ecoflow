@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,31 +21,49 @@ import {
 } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { CreateCollectionModal } from '@/components/collections/CreateCollectionModal';
 
 export default function Collections() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
   const [searchTerm, setSearchTerm] = useState('');
+  const [open, setOpen] = useState(false);
 
   const { data: collections, isLoading } = useQuery({
     queryKey: ['collections', user?.id],
     queryFn: async () => {
+      if (!user) return [];
+
       const { data, error } = await supabase
         .from('collections')
         .select(`
-          *,
-          material:materials(name, weight_kg)
+          id,
+          pickup_address,
+          scheduled_date,
+          status,
+          driver_name,
+          material:materials (
+            name,
+            weight_kg
+          )
         `)
+        .eq('user_id', user.id) // ✅ filtro correto
         .order('scheduled_date', { ascending: false });
 
       if (error) throw error;
       return data;
     },
-    enabled: !!user
+    enabled: !!user,
   });
 
-  const filteredCollections = collections?.filter(collection =>
-    collection.pickup_address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    collection.material?.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCollections = collections?.filter((collection) =>
+    collection.pickup_address
+      ?.toLowerCase()
+      .includes(searchTerm.toLowerCase()) ||
+    collection.material?.name
+      ?.toLowerCase()
+      .includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -53,19 +71,34 @@ export default function Collections() {
       title="Coletas"
       subtitle="Gerencie solicitações e acompanhe o status das coletas"
       actions={
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => setOpen(true)}>
           <Plus size={18} />
           Nova Coleta
         </Button>
       }
     >
+      {/* 🔹 MODAL */}
+      {open && (
+        <CreateCollectionModal
+          onSuccess={() => {
+            setOpen(false);
+            queryClient.invalidateQueries({ queryKey: ['collections', user?.id] });
+          }}
+        />
+      )}
+
       <Card>
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
-            <CardTitle className="text-lg font-semibold">Lista de Coletas</CardTitle>
+            <CardTitle className="text-lg font-semibold">
+              Lista de Coletas
+            </CardTitle>
             <div className="flex gap-2">
               <div className="relative flex-1 sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  size={18}
+                />
                 <Input
                   placeholder="Buscar coletas..."
                   value={searchTerm}
@@ -79,6 +112,7 @@ export default function Collections() {
             </div>
           </div>
         </CardHeader>
+
         <CardContent>
           {isLoading ? (
             <div className="flex justify-center py-12">
@@ -98,33 +132,50 @@ export default function Collections() {
                 </TableHeader>
                 <TableBody>
                   {filteredCollections.map((collection) => {
-                    const status = collection.status as keyof typeof COLLECTION_STATUS;
-                    const statusInfo = COLLECTION_STATUS[status] || COLLECTION_STATUS.agendada;
-                    
+                    const status =
+                      collection.status as keyof typeof COLLECTION_STATUS;
+                    const statusInfo =
+                      COLLECTION_STATUS[status] ||
+                      COLLECTION_STATUS.agendada;
+
                     return (
-                      <TableRow key={collection.id} className="cursor-pointer hover:bg-muted/30">
+                      <TableRow
+                        key={collection.id}
+                        className="cursor-pointer hover:bg-muted/30"
+                      >
                         <TableCell className="font-medium">
-                          {collection.material?.name || 'Material não especificado'}
+                          {collection.material?.name ||
+                            'Material não especificado'}
                         </TableCell>
+
                         <TableCell>
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <MapPin size={14} />
-                            <span className="truncate max-w-[200px]">{collection.pickup_address}</span>
+                            <span className="truncate max-w-[200px]">
+                              {collection.pickup_address}
+                            </span>
                           </div>
                         </TableCell>
+
                         <TableCell>
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Calendar size={14} />
-                            {format(new Date(collection.scheduled_date), "dd/MM/yyyy", { locale: ptBR })}
+                            {format(
+                              new Date(collection.scheduled_date),
+                              'dd/MM/yyyy',
+                              { locale: ptBR }
+                            )}
                           </div>
                         </TableCell>
+
                         <TableCell className="text-muted-foreground">
                           {collection.driver_name || '—'}
                         </TableCell>
+
                         <TableCell>
-                          <StatusBadge 
-                            status={statusInfo.color as any} 
-                            label={statusInfo.label} 
+                          <StatusBadge
+                            status={statusInfo.color as any}
+                            label={statusInfo.label}
                           />
                         </TableCell>
                       </TableRow>
@@ -139,7 +190,7 @@ export default function Collections() {
               title="Nenhuma coleta registrada"
               description="Solicite uma nova coleta para seus materiais"
               action={
-                <Button className="gap-2">
+                <Button className="gap-2" onClick={() => setOpen(true)}>
                   <Plus size={18} />
                   Solicitar Coleta
                 </Button>

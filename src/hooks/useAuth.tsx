@@ -1,10 +1,19 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-type AppRole = 'admin' | 'gestor' | 'operacional';
+/* ======================================================
+   🔹 TIPOS
+   ====================================================== */
+export type AppRole = 'admin' | 'gestor' | 'operacional';
 
-interface Profile {
+export interface Profile {
   id: string;
   user_id: string;
   full_name: string;
@@ -22,27 +31,46 @@ interface AuthContextType {
   profile: Profile | null;
   role: AppRole | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
+
+  signIn: (
+    email: string,
+    password: string
+  ) => Promise<{ error: Error | null }>;
+
+  signUp: (
+    email: string,
+    password: string,
+    fullName: string
+  ) => Promise<{ error: Error | null }>;
+
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 /* ======================================================
-   🔹 Helper: recuperar usuário DEMO
+   🔹 DEMO USER (FRONTEND ONLY)
    ====================================================== */
-const getDemoUser = () => {
+type DemoUser = {
+  email: string;
+  role: AppRole;
+  name: string;
+};
+
+const getDemoUser = (): DemoUser | null => {
   const raw = localStorage.getItem('eco-demo-user');
   if (!raw) return null;
 
   try {
-    return JSON.parse(raw);
+    return JSON.parse(raw) as DemoUser;
   } catch {
     return null;
   }
 };
 
+/* ======================================================
+   🔹 PROVIDER
+   ====================================================== */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -51,41 +79,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   /* ======================================================
-     🔹 1. BUSCA PROFILE + ROLE (SUPABASE)
+     🔹 BUSCAR PROFILE + ROLE (SUPABASE)
      ====================================================== */
   const fetchUserData = async (userId: string) => {
     try {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
+      const [{ data: profileData }, { data: roleData }] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle(),
 
-      if (profileData) {
-        setProfile(profileData as Profile);
-      }
+        supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .maybeSingle(),
+      ]);
 
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (roleData) {
-        setRole(roleData.role as AppRole);
-      }
+      setProfile(profileData ?? null);
+      setRole((roleData?.role as AppRole) ?? null);
     } catch (error) {
       console.error('Erro ao buscar dados do usuário:', error);
+      setProfile(null);
+      setRole(null);
     }
   };
 
   /* ======================================================
-     🔹 2. BOOTSTRAP DE AUTENTICAÇÃO (DEMO OU SUPABASE)
+     🔹 BOOTSTRAP (DEMO OU SUPABASE)
      ====================================================== */
   useEffect(() => {
     const demoUser = getDemoUser();
 
-    // 👉 MODO DEMO
+    // 👉 MODO DEMO (não toca no Supabase)
     if (demoUser) {
       setUser({
         id: 'demo-user',
@@ -93,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } as User);
 
       setSession(null);
-      setRole(demoUser.role as AppRole);
+      setRole(demoUser.role);
       setProfile({
         id: 'demo-profile',
         user_id: 'demo-user',
@@ -109,7 +136,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // 👉 MODO SUPABASE
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    const bootstrap = async () => {
+      const { data } = await supabase.auth.getSession();
+      const session = data.session;
+
       setSession(session);
       setUser(session?.user ?? null);
 
@@ -118,27 +148,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setIsLoading(false);
-    });
+    };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+    bootstrap();
 
-        if (session?.user) {
-          await fetchUserData(session.user.id);
-        } else {
-          setProfile(null);
-          setRole(null);
-        }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        await fetchUserData(session.user.id);
+      } else {
+        setProfile(null);
+        setRole(null);
       }
-    );
+    });
 
     return () => subscription.unsubscribe();
   }, []);
 
   /* ======================================================
-     🔹 3. LOGIN REAL (SUPABASE)
+     🔹 LOGIN REAL
      ====================================================== */
   const signIn = async (email: string, password: string) => {
     try {
@@ -155,7 +187,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setSession(data.session);
       setUser(data.user);
-
       await fetchUserData(data.user.id);
 
       return { error: null };
@@ -165,7 +196,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   /* ======================================================
-     🔹 4. CADASTRO REAL (SUPABASE)
+     🔹 CADASTRO REAL
+     🔹 (profiles + roles são criados via TRIGGER)
      ====================================================== */
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
@@ -189,7 +221,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   /* ======================================================
-     🔹 5. LOGOUT (DEMO + SUPABASE)
+     🔹 LOGOUT (DEMO + REAL)
      ====================================================== */
   const signOut = async () => {
     localStorage.removeItem('eco-demo-user');
@@ -219,10 +251,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/* ======================================================
+   🔹 HOOK
+   ====================================================== */
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth must be used dentro de AuthProvider');
   }
   return context;
 }
