@@ -119,7 +119,7 @@ npm run dev
 A aplicação ficará disponível em:
 
 👉 `http://localhost:8080`
-
+```
 
 
 ## Objetivo do Projeto
@@ -138,4 +138,4 @@ Este projeto foi desenvolvido com foco em:
 Desenvolvido por **Rafael Freitas de Paula**
 
 Projeto de estudo, portfólio e demonstração técnica.
-```
+
