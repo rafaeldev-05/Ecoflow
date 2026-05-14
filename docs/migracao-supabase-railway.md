@@ -4,6 +4,12 @@
 
 O projeto ainda usa Supabase diretamente no frontend Vite/React. O banco atual esta no Supabase e as migrations usam recursos especificos como Supabase Auth, `auth.users`, `auth.uid()`, RLS, policies, triggers e funcoes SQL.
 
+## Auth proprio em preparacao
+
+A tabela `users` foi preparada no PostgreSQL Railway para uma futura migracao de autenticacao propria com Prisma. O login, logout, `useAuth` e a tela de autenticacao ainda continuam usando Supabase Auth nesta etapa.
+
+A proxima etapa planejada e criar um fluxo seguro para o primeiro usuario admin e, depois, endpoints server-side para `/api/auth/login`, `/api/auth/me` e `/api/auth/logout`.
+
 ## Situacao desejada
 
 A arquitetura futura deve usar PostgreSQL no Railway, Prisma como camada de acesso ao banco e endpoints proprios no backend/API. O frontend deve chamar esses endpoints, nao acessar o banco diretamente.
