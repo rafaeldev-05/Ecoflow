@@ -6,57 +6,20 @@ O projeto ainda usa Supabase diretamente no frontend Vite/React. O banco atual e
 
 ## Auth proprio em preparacao
 
-A tabela `users` foi preparada no PostgreSQL Railway para uma futura migracao de autenticacao propria com Prisma. O login, logout, `useAuth` e a tela de autenticacao ainda continuam usando Supabase Auth nesta etapa.
+A tabela `users` foi criada no PostgreSQL Railway pela migration Prisma `20260514174821_create_users`. Ela usa uma role principal por usuario por meio do enum `app_role`, com os valores `admin`, `gestor` e `operacional`.
 
-Os endpoints server-side `/api/auth/login`, `/api/auth/me` e `/api/auth/logout` ja existem no backend Express e usam a tabela `users` do PostgreSQL Railway.
+Nesta etapa, Auth ainda nao foi migrado. Supabase Auth continua ativo, e login/logout continuam passando pelo fluxo existente do frontend. Os arquivos legados em `src/integrations/supabase/*`, `useAuth`, `Auth.tsx`, `Users.tsx` e `ProtectedRoute` nao foram removidos nem alterados nesta etapa.
 
-O `useAuth` do frontend passou a consumir a API propria:
+Nao foram criadas tabelas `auth.users`, `profiles` ou `user_roles` no Prisma para esta etapa. Tambem nao foram criados endpoints de Auth, middleware de permissao ou usuario admin novo.
 
-- login via `POST /api/auth/login`;
-- restauracao de sessao via `GET /api/auth/me`;
-- logout via `POST /api/auth/logout`.
+A proxima etapa recomendada e criar um fluxo seguro para o primeiro admin e implementar endpoints server-side de Auth, mantendo `DATABASE_URL` somente no backend/API.
 
-O token JWT fica salvo no `localStorage` como `eco-auth-token` para manter a sessao apos refresh. A pasta `src/integrations/supabase/*` e a dependencia `@supabase/supabase-js` ainda permanecem temporariamente para codigo legado que sera limpo em uma etapa final.
+### Proximos passos de Auth
 
-Durante a restauracao de sessao, o frontend chama `GET /api/auth/me`. O token local so deve ser removido quando a API confirmar `401` ou `403`. Erros temporarios de rede, backend indisponivel ou respostas inesperadas nao devem apagar automaticamente `eco-auth-token`; nesses casos, o frontend reaproveita o ultimo usuario seguro salvo localmente ate a API voltar.
-
-No backend, erros temporarios de conexao Prisma/Railway como `P1017`, `ConnectionReset` ou `Server has closed the connection` recebem no maximo uma nova tentativa simples. Se a falha persistir, a API retorna erro `500` controlado com mensagem de indisponibilidade temporaria do banco, sem derrubar o servidor.
-
-### Primeiro admin
-
-O script manual `npm run create:admin` cria o primeiro usuario administrador na tabela `users`. Ele usa variaveis de ambiente e nao deve receber senhas hardcoded no codigo.
-
-Exemplo:
-
-```bash
-ADMIN_EMAIL="admin@example.com" ADMIN_PASSWORD="senha-segura" ADMIN_FULL_NAME="Administrador" npm run create:admin
-```
-
-Variaveis opcionais:
-
-- `ADMIN_COMPANY`
-- `ADMIN_PHONE`
-- `ADMIN_AVATAR_URL`
-
-Este script e temporario para preparacao do auth proprio. Supabase Auth, login e logout ainda continuam ativos ate a migracao dos endpoints de autenticacao.
-
-### Endpoints de auth proprio
-
-Endpoints disponiveis no backend:
-
-- `POST /api/auth/login`: recebe `email` e `password`, valida `password_hash` com `bcryptjs` e retorna um JWT com dados seguros do usuario.
-- `GET /api/auth/me`: exige `Authorization: Bearer TOKEN` e retorna o usuario autenticado.
-- `POST /api/auth/logout`: retorna sucesso para o fluxo JWT stateless.
-
-O token JWT usa a variavel server-side `JWT_SECRET`. Essa variavel deve existir somente no backend/API e nunca deve ser exposta no frontend.
-
-No frontend, a URL publica da API deve ser configurada com `VITE_API_URL`, por exemplo:
-
-```env
-VITE_API_URL="http://localhost:3001"
-```
-
-Cadastro publico ainda nao foi migrado. A proxima etapa recomendada e criar endpoints proprios para gerenciamento de usuarios e migrar `Users.tsx`.
+- Criar script ou endpoint seguro para criar o primeiro usuario admin.
+- Criar `POST /api/auth/login`, `GET /api/auth/me` e `POST /api/auth/logout`.
+- Criar middleware `requireAuth` e `requireRole`.
+- Depois disso, migrar gradualmente `useAuth` e `Users.tsx` para a API propria.
 
 ## Situacao desejada
 
