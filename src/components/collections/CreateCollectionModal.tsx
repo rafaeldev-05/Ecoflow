@@ -11,6 +11,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 interface Props {
   onSuccess: () => void;
@@ -28,7 +29,7 @@ export function CreateCollectionModal({ onSuccess }: Props) {
     if (!user) return;
 
     if (!materialId || !pickupAddress || !scheduledDate) {
-      alert("Preencha todos os campos");
+      toast.error("Preencha todos os campos obrigatorios.");
       return;
     }
 
@@ -44,8 +45,9 @@ export function CreateCollectionModal({ onSuccess }: Props) {
       });
 
       onSuccess();
-    } catch (error: any) {
-      alert(error.message || "Erro ao criar coleta");
+    } catch (error: unknown) {
+      console.error("Erro ao criar coleta:", error);
+      toast.error("Nao foi possivel criar a coleta. Tente novamente.");
     } finally {
       setLoading(false);
     }

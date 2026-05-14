@@ -245,7 +245,7 @@ export default function AuthPage() {
                       id="fullName"
                       placeholder="Seu nome"
                       className="pl-10"
-                      {...(signupForm.register as any)('fullName')}
+                      {...signupForm.register('fullName')}
                     />
                   </div>
                   {!isLogin && signupForm.formState.errors.fullName && (

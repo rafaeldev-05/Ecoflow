@@ -20,8 +20,9 @@ import {
   X,
   User
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, LucideIcon> = {
   LayoutDashboard,
   Package,
   Truck,

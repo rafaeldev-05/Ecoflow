@@ -159,7 +159,7 @@ export default function Users() {
                         </TableCell>
                         <TableCell>
                           <StatusBadge 
-                            status={roleInfo.color as any} 
+                            status={roleInfo.color} 
                             label={roleInfo.label} 
                           />
                         </TableCell>

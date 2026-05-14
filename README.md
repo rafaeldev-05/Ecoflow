@@ -1,141 +1,98 @@
-# 🌱 EcoFlow – Plataforma de Gestão de Resíduos e Métricas ESG
+# EcoFlow Logistics
 
-EcoFlow é uma aplicação web desenvolvida para **gestão de resíduos, logística reversa e acompanhamento de métricas ESG**, com foco em clareza, usabilidade e demonstração de regras de negócio por perfil de usuário.
+Aplicacao web para gestao de residuos, logistica reversa e metricas ESG.
 
-O projeto foi pensado como **MVP / portfólio**, incluindo um **modo demonstração funcional**, sem dependência obrigatória de backend para testes iniciais.
+O projeto atualmente usa Vite, React, TypeScript, Tailwind CSS, shadcn/ui e Supabase. Uma base inicial de Prisma foi adicionada apenas para preparar uma futura migracao para PostgreSQL no Railway.
 
----
+## Requisitos
 
-## 🚀 Funcionalidades
+- Node.js 18+
+- npm
 
-- 📊 Dashboard com indicadores de sustentabilidade
-- ♻️ Controle de materiais e coletas
-- 📈 Visualização de métricas ESG
-- 👥 Gestão de usuários (acesso restrito)
-- 🔐 Autenticação por perfil (role-based access)
-- ⚡ Modo Demonstração (login rápido sem backend)
+Use npm como gerenciador de pacotes. Nao misture npm, yarn, pnpm ou bun neste projeto.
 
----
-
-## 👤 Perfis de Acesso (Roles)
-
-O sistema trabalha com três perfis distintos:
-
-| Perfil                | Permissões principais                                 |
-| --------------------- | ------------------------------------------------------ |
-| **Operacional** | Visualizar dashboard, materiais e coletas              |
-| **Gestor**      | Acesso a métricas e indicadores                       |
-| **Admin**       | Gestão completa, כולל usuários e configurações |
-
-Esses perfis são respeitados pelas rotas protegidas da aplicação.
-
----
-
-## 🧪 Modo Demonstração
-
-O EcoFlow possui um **modo demo**, ideal para apresentações e testes rápidos.
-
-### Acesso rápido disponível na tela de login:
-
-- 👩 **Maria Silva** – Operacional
-- 👨 **João Santos** – Gestor
-- 👩‍💼 **Ana Costa** – Admin
-
-➡️ O login demo funciona via `localStorage`, sem necessidade de Supabase ativo.
-
----
-
-## 🛠️ Tecnologias Utilizadas
-
-- ⚡ **Vite**
-- ⚛️ **React + TypeScript**
-- 🎨 **Tailwind CSS**
-- 🧩 **shadcn/ui**
-- 🔁 **React Router**
-- 🧠 **Context API (Auth + Roles)**
-- 🔐 **Supabase Auth** (opcional / modo real)
-
----
-
-
-## 📁 Estrutura do Projeto (simplificada)
-
-src/
-
-├── components/
-
-│   ├── auth/           # ProtectedRoute, controle de acesso
-
-│   ├── ui/             # Componentes reutilizáveis
-
-├── hooks/
-
-│   └── useAuth.tsx     # Contexto de autenticação
-
-├── pages/
-
-│   ├── Auth.tsx
-
-│   ├── Dashboard.tsx
-
-│   ├── Metrics.tsx
-
-│   ├── Users.tsx
-
-│   └── Settings.tsx
-
-├── lib/
-
-│   └── constants.ts    # Usuários demo e infos da aplicação
-
-└── integrations/
-
-└── supabase/       # Cliente Supabase
-
----
-
-## ▶️ Rodando o projeto localmente
-
-### Pré-requisitos
-
-- Node.js (versão 18+ recomendada)
-- npm ou bun
-
-### Passos
+## Instalacao
 
 ```bash
-# 1. Clonar o repositório
-git clone <URL_DO_REPOSITORIO>
-
-# 2. Entrar na pasta
-cd ecoflow-logistics
-
-# 3. Instalar dependências
 npm install
-
-# 4. Rodar o projeto
-npm run dev
----
-A aplicação ficará disponível em:
-
-👉 `http://localhost:8080`
 ```
 
+## Variaveis de ambiente
 
-## Objetivo do Projeto
+Crie um arquivo `.env` local a partir do modelo:
 
-Este projeto foi desenvolvido com foco em:
+```bash
+cp .env.example .env
+```
 
-* Demonstração de **arquitetura frontend**
-* Controle de acesso por perfil
-* Clareza de regras de negócio
-* Experiência do usuário
-* Base sólida para evolução futura (API, BI, IA, etc.)
+Variaveis publicas do frontend:
 
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
 
-## 👨‍💻 Autor
+Variaveis privadas de servidor:
 
-Desenvolvido por **Rafael Freitas de Paula**
+- `DATABASE_URL`
+- `JWT_SECRET`
 
-Projeto de estudo, portfólio e demonstração técnica.
+Variaveis privadas nao devem ser acessadas pelo Vite/React. Nunca coloque `SUPABASE_SERVICE_ROLE_KEY`, connection strings privadas, senhas ou tokens secretos no frontend.
 
+## Desenvolvimento
+
+```bash
+npm run dev
+```
+
+A aplicacao roda por padrao em `http://localhost:8080`.
+
+## Build
+
+```bash
+npm run build
+```
+
+## Testes e qualidade
+
+```bash
+npm run lint
+npm run test
+```
+
+## Prisma
+
+Prisma foi preparado para uso futuro no backend/API:
+
+- schema: `prisma/schema.prisma`
+- client server-side: `src/server/db/prisma.ts`
+
+Comandos disponiveis:
+
+```bash
+npm run prisma:validate
+npm run prisma:generate
+```
+
+O app ainda nao usa Prisma em producao. O frontend continua usando Supabase temporariamente.
+
+## Banco de dados
+
+Estado atual:
+
+- Supabase ainda e usado como banco/API/Auth.
+- As migrations atuais ficam em `supabase/migrations`.
+
+Estado futuro planejado:
+
+- PostgreSQL no Railway.
+- Prisma no backend/API.
+- Frontend chamando endpoints proprios em vez de acessar o banco diretamente.
+
+Leia `docs/migracao-supabase-railway.md` antes de iniciar a migracao.
+
+## Seguranca
+
+- Nunca versione `.env`.
+- Use `.env.example` somente como modelo.
+- Credenciais que ja foram expostas devem ser rotacionadas.
+- Como o `.env` ja entrou no historico Git, avalie uma limpeza planejada do historico antes de tornar o repositorio publico ou compartilhar novamente.
+- `SUPABASE_SERVICE_ROLE_KEY` so pode existir em backend/API seguro, nunca no frontend.

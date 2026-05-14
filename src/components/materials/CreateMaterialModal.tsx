@@ -11,6 +11,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 interface Props {
   onSuccess: () => void;
@@ -44,7 +45,8 @@ export function CreateMaterialModal({ onSuccess }: Props) {
     if (!error) {
       onSuccess();
     } else {
-      alert(error.message);
+      console.error("Erro ao cadastrar material:", error);
+      toast.error("Nao foi possivel cadastrar o material. Tente novamente.");
     }
   }
 

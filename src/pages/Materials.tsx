@@ -155,7 +155,7 @@ export default function Materials() {
 
                         <TableCell>
                           <StatusBadge
-                            status={statusInfo.color as any}
+                            status={statusInfo.color}
                             label={statusInfo.label}
                           />
                         </TableCell>

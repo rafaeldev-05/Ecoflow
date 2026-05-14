@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Initial Prisma schema prepared from the current Supabase migrations.
+// The current app still uses Supabase. These models are for the future
+// Railway PostgreSQL migration and must be validated against the real DB
+// before any migration or data import.
+
+enum AppRole {
+  admin
+  gestor
+  operacional
+
+  @@map("app_role")
+}
+
+enum CollectionStatus {
+  agendada
+  em_transito
+  coletada
+  processando
+  concluida
+  cancelada
+
+  @@map("collection_status")
+}
+
+model Profile {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @unique @map("user_id") @db.Uuid
+  fullName  String   @map("full_name")
+  email     String
+  avatarUrl String?  @map("avatar_url")
+  company   String?
+  phone     String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("profiles")
+}
+
+model UserRole {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  role      AppRole  @default(operacional)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([userId, role])
+  @@map("user_roles")
+}
+
+model MaterialCategory {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String     @unique
+  description String?
+  icon        String?
+  co2Factor   Decimal?   @default(0) @map("co2_factor") @db.Decimal(10, 4)
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  materials   Material[]
+
+  @@map("material_categories")
+}
+
+model Material {
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  description String?
+  categoryId  String?           @map("category_id") @db.Uuid
+  category    MaterialCategory? @relation(fields: [categoryId], references: [id])
+  weightKg    Decimal           @default(0) @map("weight_kg") @db.Decimal(10, 2)
+  quantity    Int               @default(1)
+  unit        String?           @default("kg")
+  status      String?           @default("pendente")
+  location    String?
+  userId      String            @map("user_id") @db.Uuid
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime          @default(now()) @map("updated_at") @db.Timestamptz(6)
+  collections Collection[]
+
+  @@map("materials")
+}
+
+model Collection {
+  id            String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  materialId    String              @map("material_id") @db.Uuid
+  material      Material            @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  userId        String              @map("user_id") @db.Uuid
+  status        CollectionStatus    @default(agendada)
+  scheduledDate DateTime            @map("scheduled_date") @db.Date
+  scheduledTime String?             @map("scheduled_time")
+  pickupAddress String              @map("pickup_address")
+  notes         String?
+  driverName    String?             @map("driver_name")
+  driverPhone   String?             @map("driver_phone")
+  collectedAt   DateTime?           @map("collected_at") @db.Timestamptz(6)
+  completedAt   DateTime?           @map("completed_at") @db.Timestamptz(6)
+  createdAt     DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime            @default(now()) @map("updated_at") @db.Timestamptz(6)
+  history       CollectionHistory[]
+
+  @@map("collections")
+}
+
+model CollectionHistory {
+  id           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  collectionId String           @map("collection_id") @db.Uuid
+  collection   Collection       @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  status       CollectionStatus
+  notes        String?
+  createdBy    String?          @map("created_by") @db.Uuid
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("collection_history")
+}
+
+model EnvironmentalMetric {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId               String?  @map("user_id") @db.Uuid
+  periodStart          DateTime @map("period_start") @db.Date
+  periodEnd            DateTime @map("period_end") @db.Date
+  totalWeightKg        Decimal? @default(0) @map("total_weight_kg") @db.Decimal(12, 2)
+  co2AvoidedKg         Decimal? @default(0) @map("co2_avoided_kg") @db.Decimal(12, 2)
+  collectionsCompleted Int?     @default(0) @map("collections_completed")
+  materialsRecycled    Int?     @default(0) @map("materials_recycled")
+  recyclingRate        Decimal? @default(0) @map("recycling_rate") @db.Decimal(5, 2)
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("environmental_metrics")
+}
+
+model ChatConversation {
+  id        String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String        @map("user_id") @db.Uuid
+  title     String?       @default("Nova conversa")
+  isActive  Boolean?      @default(true) @map("is_active")
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime      @default(now()) @map("updated_at") @db.Timestamptz(6)
+  messages  ChatMessage[]
+
+  @@map("chat_conversations")
+}
+
+model ChatMessage {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversationId String           @map("conversation_id") @db.Uuid
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String
+  content        String
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("chat_messages")
+}
+
+model ActivityLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id") @db.Uuid
+  details    Json?
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("activity_logs")
+}

@@ -42,12 +42,12 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/metrics" element={
-              <ProtectedRoute requiredRole={['gestor', 'admin']}>
+              <ProtectedRoute allowedRoles={['gestor', 'admin']}>
                 <Metrics />
               </ProtectedRoute>
             } />
             <Route path="/users" element={
-              <ProtectedRoute requiredRole={['admin']}>
+              <ProtectedRoute allowedRoles={['admin']}>
                 <Users />
               </ProtectedRoute>
             } />
