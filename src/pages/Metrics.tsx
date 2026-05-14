@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MetricCard } from '@/components/ui/MetricCard';
@@ -20,6 +19,7 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import { fetchLatestEnvironmentalMetric } from '@/services/environmentalMetricsApi';
 
 const mockMonthlyData = [
   { month: 'Jan', peso: 1200, co2: 480, coletas: 15 },
@@ -44,15 +44,7 @@ export default function Metrics() {
   const { data: metrics, isLoading } = useQuery({
     queryKey: ['environmental-metrics', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('environmental_metrics')
-        .select('*')
-        .order('period_end', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
+      return fetchLatestEnvironmentalMetric(user?.id);
     },
     enabled: !!user
   });

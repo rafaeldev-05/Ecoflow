@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CollectionStatus {
+  agendada
+  em_transito
+  coletada
+  processando
+  concluida
+  cancelada
+
+  @@map("collection_status")
+}
+
+model MaterialCategory {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String     @unique
+  description String?
+  icon        String?
+  co2Factor   Decimal?   @default(0) @map("co2_factor") @db.Decimal(10, 4)
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  materials   Material[]
+
+  @@map("material_categories")
+}
+
+model Material {
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  description String?
+  categoryId  String?           @map("category_id") @db.Uuid
+  category    MaterialCategory? @relation(fields: [categoryId], references: [id])
+  weightKg    Decimal           @default(0) @map("weight_kg") @db.Decimal(10, 2)
+  quantity    Int               @default(1)
+  unit        String?           @default("kg")
+  status      String?           @default("pendente")
+  location    String?
+  userId      String            @map("user_id") @db.Uuid
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime          @default(now()) @map("updated_at") @db.Timestamptz(6)
+  collections Collection[]
+
+  @@map("materials")
+}
+
+model Collection {
+  id            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  materialId    String           @map("material_id") @db.Uuid
+  material      Material         @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  userId        String           @map("user_id") @db.Uuid
+  status        CollectionStatus @default(agendada)
+  scheduledDate DateTime         @map("scheduled_date") @db.Date
+  scheduledTime String?          @map("scheduled_time")
+  pickupAddress String           @map("pickup_address")
+  notes         String?
+  driverName    String?          @map("driver_name")
+  driverPhone   String?          @map("driver_phone")
+  collectedAt   DateTime?        @map("collected_at") @db.Timestamptz(6)
+  completedAt   DateTime?        @map("completed_at") @db.Timestamptz(6)
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime         @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("collections")
+}
+
+model EnvironmentalMetric {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId               String?  @map("user_id") @db.Uuid
+  periodStart          DateTime @map("period_start") @db.Date
+  periodEnd            DateTime @map("period_end") @db.Date
+  totalWeightKg        Decimal? @default(0) @map("total_weight_kg") @db.Decimal(12, 2)
+  co2AvoidedKg         Decimal? @default(0) @map("co2_avoided_kg") @db.Decimal(12, 2)
+  collectionsCompleted Int?     @default(0) @map("collections_completed")
+  materialsRecycled    Int?     @default(0) @map("materials_recycled")
+  recyclingRate        Decimal? @default(0) @map("recycling_rate") @db.Decimal(5, 2)
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("environmental_metrics")
+}
