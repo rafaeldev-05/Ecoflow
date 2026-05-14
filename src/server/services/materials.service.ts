@@ -1,6 +1,7 @@
 import type { Material } from '@prisma/client';
 
 import { prisma } from '../db/prisma';
+import { withTemporaryDatabaseRetry } from '../db/prisma-retry';
 
 export type CreateMaterialInput = {
   name: string;
@@ -39,48 +40,52 @@ function mapMaterial(material: Material & { category?: { id: string; name: strin
 }
 
 export async function listMaterials(userId?: string) {
-  const materials = await prisma.material.findMany({
-    where: userId ? { userId } : undefined,
-    include: {
-      category: {
-        select: {
-          id: true,
-          name: true,
-          icon: true,
+  const materials = await withTemporaryDatabaseRetry(() =>
+    prisma.material.findMany({
+      where: userId ? { userId } : undefined,
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            icon: true,
+          },
         },
       },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-  });
+      orderBy: {
+        createdAt: 'desc',
+      },
+    }),
+  );
 
   return materials.map(mapMaterial);
 }
 
 export async function createMaterial(input: CreateMaterialInput) {
-  const material = await prisma.material.create({
-    data: {
-      name: input.name,
-      description: input.description ?? null,
-      categoryId: input.category_id ?? null,
-      weightKg: input.weight_kg ?? 1,
-      quantity: input.quantity ?? 1,
-      unit: input.unit ?? 'kg',
-      status: input.status ?? 'pendente',
-      location: input.location ?? null,
-      userId: input.user_id,
-    },
-    include: {
-      category: {
-        select: {
-          id: true,
-          name: true,
-          icon: true,
+  const material = await withTemporaryDatabaseRetry(() =>
+    prisma.material.create({
+      data: {
+        name: input.name,
+        description: input.description ?? null,
+        categoryId: input.category_id ?? null,
+        weightKg: input.weight_kg ?? 1,
+        quantity: input.quantity ?? 1,
+        unit: input.unit ?? 'kg',
+        status: input.status ?? 'pendente',
+        location: input.location ?? null,
+        userId: input.user_id,
+      },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            icon: true,
+          },
         },
       },
-    },
-  });
+    }),
+  );
 
   return mapMaterial(material);
 }

@@ -8,7 +8,19 @@ O projeto ainda usa Supabase diretamente no frontend Vite/React. O banco atual e
 
 A tabela `users` foi preparada no PostgreSQL Railway para uma futura migracao de autenticacao propria com Prisma. O login, logout, `useAuth` e a tela de autenticacao ainda continuam usando Supabase Auth nesta etapa.
 
-Os endpoints server-side `/api/auth/login`, `/api/auth/me` e `/api/auth/logout` ja existem no backend Express e usam a tabela `users` do PostgreSQL Railway. O frontend ainda nao foi migrado para esses endpoints: login, logout, `useAuth` e a tela de autenticacao continuam usando Supabase Auth nesta etapa.
+Os endpoints server-side `/api/auth/login`, `/api/auth/me` e `/api/auth/logout` ja existem no backend Express e usam a tabela `users` do PostgreSQL Railway.
+
+O `useAuth` do frontend passou a consumir a API propria:
+
+- login via `POST /api/auth/login`;
+- restauracao de sessao via `GET /api/auth/me`;
+- logout via `POST /api/auth/logout`.
+
+O token JWT fica salvo no `localStorage` como `eco-auth-token` para manter a sessao apos refresh. A pasta `src/integrations/supabase/*` e a dependencia `@supabase/supabase-js` ainda permanecem temporariamente para codigo legado que sera limpo em uma etapa final.
+
+Durante a restauracao de sessao, o frontend chama `GET /api/auth/me`. O token local so deve ser removido quando a API confirmar `401` ou `403`. Erros temporarios de rede, backend indisponivel ou respostas inesperadas nao devem apagar automaticamente `eco-auth-token`; nesses casos, o frontend reaproveita o ultimo usuario seguro salvo localmente ate a API voltar.
+
+No backend, erros temporarios de conexao Prisma/Railway como `P1017`, `ConnectionReset` ou `Server has closed the connection` recebem no maximo uma nova tentativa simples. Se a falha persistir, a API retorna erro `500` controlado com mensagem de indisponibilidade temporaria do banco, sem derrubar o servidor.
 
 ### Primeiro admin
 
@@ -36,7 +48,15 @@ Endpoints disponiveis no backend:
 - `GET /api/auth/me`: exige `Authorization: Bearer TOKEN` e retorna o usuario autenticado.
 - `POST /api/auth/logout`: retorna sucesso para o fluxo JWT stateless.
 
-O token JWT usa a variavel server-side `JWT_SECRET`. Essa variavel deve existir somente no backend/API e nunca deve ser exposta no frontend. O frontend Vite/React ainda nao consome esses endpoints nesta etapa.
+O token JWT usa a variavel server-side `JWT_SECRET`. Essa variavel deve existir somente no backend/API e nunca deve ser exposta no frontend.
+
+No frontend, a URL publica da API deve ser configurada com `VITE_API_URL`, por exemplo:
+
+```env
+VITE_API_URL="http://localhost:3001"
+```
+
+Cadastro publico ainda nao foi migrado. A proxima etapa recomendada e criar endpoints proprios para gerenciamento de usuarios e migrar `Users.tsx`.
 
 ## Situacao desejada
 

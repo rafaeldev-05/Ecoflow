@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 
 import { signAuthToken } from '../auth/jwt';
 import { prisma } from '../db/prisma';
+import { withTemporaryDatabaseRetry } from '../db/prisma-retry';
 
 type UserWithSafeFields = Pick<
   User,
@@ -57,15 +58,17 @@ function toSafeUser(user: UserWithSafeFields): SafeAuthUser {
 export async function loginWithPassword(email: string, password: string): Promise<LoginResult> {
   const normalizedEmail = email.trim().toLowerCase();
 
-  const user = await prisma.user.findUnique({
-    where: {
-      email: normalizedEmail,
-    },
-    select: {
-      ...safeUserSelect,
-      passwordHash: true,
-    },
-  });
+  const user = await withTemporaryDatabaseRetry(() =>
+    prisma.user.findUnique({
+      where: {
+        email: normalizedEmail,
+      },
+      select: {
+        ...safeUserSelect,
+        passwordHash: true,
+      },
+    }),
+  );
 
   if (!user) {
     return { status: 'invalid_credentials' };
@@ -96,12 +99,14 @@ export async function loginWithPassword(email: string, password: string): Promis
 }
 
 export async function getSafeUserById(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-    select: safeUserSelect,
-  });
+  const user = await withTemporaryDatabaseRetry(() =>
+    prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: safeUserSelect,
+    }),
+  );
 
   return user ? toSafeUser(user) : null;
 }

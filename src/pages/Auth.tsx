@@ -50,7 +50,10 @@ export default function AuthPage() {
       if (isLogin) {
         const { error } = await signIn(data.email, data.password);
         if (error) {
-          if (error.message.includes('Invalid login credentials')) {
+          if (
+            error.message.includes('Invalid login credentials') ||
+            error.message.includes('Credenciais invalidas')
+          ) {
             toast.error('Email ou senha incorretos');
           } else {
             toast.error('Erro ao fazer login. Tente novamente.');

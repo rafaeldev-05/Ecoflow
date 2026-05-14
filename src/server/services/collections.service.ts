@@ -1,6 +1,7 @@
 import type { Collection, CollectionStatus } from '@prisma/client';
 
 import { prisma } from '../db/prisma';
+import { withTemporaryDatabaseRetry } from '../db/prisma-retry';
 
 export type CreateCollectionInput = {
   user_id: string;
@@ -45,46 +46,50 @@ function mapCollection(collection: CollectionWithMaterial) {
 }
 
 export async function listCollections(userId?: string) {
-  const collections = await prisma.collection.findMany({
-    where: userId ? { userId } : undefined,
-    include: {
-      material: {
-        select: {
-          name: true,
-          weightKg: true,
+  const collections = await withTemporaryDatabaseRetry(() =>
+    prisma.collection.findMany({
+      where: userId ? { userId } : undefined,
+      include: {
+        material: {
+          select: {
+            name: true,
+            weightKg: true,
+          },
         },
       },
-    },
-    orderBy: {
-      scheduledDate: 'desc',
-    },
-  });
+      orderBy: {
+        scheduledDate: 'desc',
+      },
+    }),
+  );
 
   return collections.map(mapCollection);
 }
 
 export async function createCollection(input: CreateCollectionInput) {
-  const collection = await prisma.collection.create({
-    data: {
-      userId: input.user_id,
-      materialId: input.material_id,
-      pickupAddress: input.pickup_address,
-      scheduledDate: new Date(`${input.scheduled_date}T00:00:00.000Z`),
-      scheduledTime: input.scheduled_time ?? null,
-      driverName: input.driver_name ?? null,
-      driverPhone: input.driver_phone ?? null,
-      notes: input.notes ?? null,
-      status: input.status ?? 'agendada',
-    },
-    include: {
-      material: {
-        select: {
-          name: true,
-          weightKg: true,
+  const collection = await withTemporaryDatabaseRetry(() =>
+    prisma.collection.create({
+      data: {
+        userId: input.user_id,
+        materialId: input.material_id,
+        pickupAddress: input.pickup_address,
+        scheduledDate: new Date(`${input.scheduled_date}T00:00:00.000Z`),
+        scheduledTime: input.scheduled_time ?? null,
+        driverName: input.driver_name ?? null,
+        driverPhone: input.driver_phone ?? null,
+        notes: input.notes ?? null,
+        status: input.status ?? 'agendada',
+      },
+      include: {
+        material: {
+          select: {
+            name: true,
+            weightKg: true,
+          },
         },
       },
-    },
-  });
+    }),
+  );
 
   return mapCollection(collection);
 }

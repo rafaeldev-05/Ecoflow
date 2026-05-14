@@ -1,11 +1,12 @@
 import { prisma } from '../db/prisma';
+import { withTemporaryDatabaseRetry } from '../db/prisma-retry';
 
 export async function getDashboardSummary(userId?: string) {
   const materialWhere = userId ? { userId } : undefined;
   const collectionWhere = userId ? { userId } : undefined;
 
   const [materials, totalMaterials, collections, totalCollections, latestMetric] =
-    await Promise.all([
+    await withTemporaryDatabaseRetry(() => Promise.all([
       prisma.material.findMany({
         where: materialWhere,
         select: {
@@ -34,7 +35,7 @@ export async function getDashboardSummary(userId?: string) {
           periodEnd: 'desc',
         },
       }),
-    ]);
+    ]));
 
   const totalWeightKg = materials.reduce(
     (total, material) => total + Number(material.weightKg),

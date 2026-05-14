@@ -5,13 +5,16 @@ import {
   useState,
   ReactNode,
 } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  type ApiAuthUser,
+  type AppRole,
+  loginRequest,
+  logoutRequest,
+  meRequest,
+} from '@/lib/api/auth';
+import { ApiRequestError } from '@/lib/api';
 
-/* ======================================================
-   🔹 TIPOS
-   ====================================================== */
-export type AppRole = 'admin' | 'gestor' | 'operacional';
+export type { AppRole };
 
 export interface Profile {
   id: string;
@@ -25,9 +28,23 @@ export interface Profile {
   updated_at?: string;
 }
 
+export type AuthUser = {
+  id: string;
+  email?: string;
+  user_metadata?: {
+    full_name?: string;
+    avatar_url?: string | null;
+  };
+};
+
+type AuthSession = {
+  access_token: string;
+  user: AuthUser;
+};
+
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  user: AuthUser | null;
+  session: AuthSession | null;
   profile: Profile | null;
   role: AppRole | null;
   isLoading: boolean;
@@ -47,10 +64,10 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AUTH_TOKEN_KEY = 'eco-auth-token';
+const AUTH_USER_KEY = 'eco-auth-user';
+const DEMO_USER_KEY = 'eco-demo-user';
 
-/* ======================================================
-   🔹 DEMO USER (FRONTEND ONLY)
-   ====================================================== */
 type DemoUser = {
   email: string;
   role: AppRole;
@@ -58,7 +75,7 @@ type DemoUser = {
 };
 
 const getDemoUser = (): DemoUser | null => {
-  const raw = localStorage.getItem('eco-demo-user');
+  const raw = localStorage.getItem(DEMO_USER_KEY);
   if (!raw) return null;
 
   try {
@@ -68,57 +85,109 @@ const getDemoUser = (): DemoUser | null => {
   }
 };
 
-/* ======================================================
-   🔹 PROVIDER
-   ====================================================== */
+function isAppRole(value: unknown): value is AppRole {
+  return value === 'admin' || value === 'gestor' || value === 'operacional';
+}
+
+function isApiAuthUser(value: unknown): value is ApiAuthUser {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const user = value as Partial<ApiAuthUser>;
+
+  return (
+    typeof user.id === 'string' &&
+    typeof user.email === 'string' &&
+    typeof user.fullName === 'string' &&
+    isAppRole(user.role) &&
+    typeof user.isActive === 'boolean'
+  );
+}
+
+function getCachedApiUser(): ApiAuthUser | null {
+  const raw = localStorage.getItem(AUTH_USER_KEY);
+  if (!raw) return null;
+
+  try {
+    const user = JSON.parse(raw);
+    return isApiAuthUser(user) ? user : null;
+  } catch {
+    return null;
+  }
+}
+
+function mapApiUserToAuthUser(apiUser: ApiAuthUser): AuthUser {
+  return {
+    id: apiUser.id,
+    email: apiUser.email,
+    user_metadata: {
+      full_name: apiUser.fullName,
+      avatar_url: apiUser.avatarUrl,
+    },
+  };
+}
+
+function mapApiUserToProfile(apiUser: ApiAuthUser): Profile {
+  return {
+    id: apiUser.id,
+    user_id: apiUser.id,
+    full_name: apiUser.fullName,
+    email: apiUser.email,
+    avatar_url: apiUser.avatarUrl,
+    company: apiUser.company,
+    phone: apiUser.phone,
+  };
+}
+
+function buildSession(token: string, user: AuthUser): AuthSession {
+  return {
+    access_token: token,
+    user,
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<AuthSession | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  /* ======================================================
-     🔹 BUSCAR PROFILE + ROLE (SUPABASE)
-     ====================================================== */
-  const fetchUserData = async (userId: string) => {
-    try {
-      const [{ data: profileData }, { data: roleData }] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', userId)
-          .maybeSingle(),
+  function applyAuthenticatedUser(apiUser: ApiAuthUser, token: string) {
+    const authUser = mapApiUserToAuthUser(apiUser);
 
-        supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId)
-          .maybeSingle(),
-      ]);
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(apiUser));
+    setUser(authUser);
+    setSession(buildSession(token, authUser));
+    setProfile(mapApiUserToProfile(apiUser));
+    setRole(apiUser.role);
+  }
 
-      setProfile(profileData ?? null);
-      setRole((roleData?.role as AppRole) ?? null);
-    } catch (error) {
-      console.error('Erro ao buscar dados do usuário:', error);
-      setProfile(null);
-      setRole(null);
-    }
-  };
+  function clearAuthState() {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_USER_KEY);
+    localStorage.removeItem(DEMO_USER_KEY);
+    setUser(null);
+    setSession(null);
+    setProfile(null);
+    setRole(null);
+  }
 
-  /* ======================================================
-     🔹 BOOTSTRAP (DEMO OU SUPABASE)
-     ====================================================== */
   useEffect(() => {
     const demoUser = getDemoUser();
 
-    // 👉 MODO DEMO (não toca no Supabase)
     if (demoUser) {
-      setUser({
+      const demoAuthUser: AuthUser = {
         id: 'demo-user',
         email: demoUser.email,
-      } as User);
+        user_metadata: {
+          full_name: demoUser.name,
+          avatar_url: null,
+        },
+      };
 
+      setUser(demoAuthUser);
       setSession(null);
       setRole(demoUser.role);
       setProfile({
@@ -130,64 +199,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         company: null,
         phone: null,
       });
-
       setIsLoading(false);
       return;
     }
 
-    // 👉 MODO SUPABASE
-    const bootstrap = async () => {
-      const { data } = await supabase.auth.getSession();
-      const session = data.session;
+    const restoreSession = async () => {
+      const token = localStorage.getItem(AUTH_TOKEN_KEY);
 
-      setSession(session);
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        await fetchUserData(session.user.id);
+      if (!token) {
+        clearAuthState();
+        setIsLoading(false);
+        return;
       }
 
-      setIsLoading(false);
+      try {
+        const { user: apiUser } = await meRequest(token);
+        applyAuthenticatedUser(apiUser, token);
+      } catch (error) {
+        if (
+          error instanceof ApiRequestError &&
+          (error.status === 401 || error.status === 403)
+        ) {
+          clearAuthState();
+          return;
+        }
+
+        const cachedUser = getCachedApiUser();
+
+        if (cachedUser) {
+          applyAuthenticatedUser(cachedUser, token);
+        }
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    bootstrap();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        await fetchUserData(session.user.id);
-      } else {
-        setProfile(null);
-        setRole(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    restoreSession();
   }, []);
 
-  /* ======================================================
-     🔹 LOGIN REAL
-     ====================================================== */
   const signIn = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      localStorage.removeItem(DEMO_USER_KEY);
+      const { token, user: apiUser } = await loginRequest(email, password);
 
-      if (error) return { error };
-
-      if (!data.session || !data.user) {
-        return { error: new Error('Sessão não criada') };
-      }
-
-      setSession(data.session);
-      setUser(data.user);
-      await fetchUserData(data.user.id);
+      localStorage.setItem(AUTH_TOKEN_KEY, token);
+      applyAuthenticatedUser(apiUser, token);
 
       return { error: null };
     } catch (error) {
@@ -195,42 +251,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  /* ======================================================
-     🔹 CADASTRO REAL
-     🔹 (profiles + roles são criados via TRIGGER)
-     ====================================================== */
-  const signUp = async (email: string, password: string, fullName: string) => {
-    try {
-      const redirectUrl = `${window.location.origin}/`;
-
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            full_name: fullName,
-          },
-        },
-      });
-
-      return { error: error as Error | null };
-    } catch (error) {
-      return { error: error as Error };
-    }
+  const signUp = async (_email: string, _password: string, _fullName: string) => {
+    return {
+      error: new Error('Cadastro publico ainda nao foi migrado para a API propria.'),
+    };
   };
 
-  /* ======================================================
-     🔹 LOGOUT (DEMO + REAL)
-     ====================================================== */
   const signOut = async () => {
-    localStorage.removeItem('eco-demo-user');
-    await supabase.auth.signOut();
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
 
-    setUser(null);
-    setSession(null);
-    setProfile(null);
-    setRole(null);
+    if (token) {
+      try {
+        await logoutRequest(token);
+      } catch {
+        // Logout local continua mesmo se o token ja estiver invalido.
+      }
+    }
+
+    clearAuthState();
   };
 
   return (
@@ -251,9 +289,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/* ======================================================
-   🔹 HOOK
-   ====================================================== */
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {

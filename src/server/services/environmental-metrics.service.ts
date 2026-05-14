@@ -1,6 +1,7 @@
 import type { EnvironmentalMetric } from '@prisma/client';
 
 import { prisma } from '../db/prisma';
+import { withTemporaryDatabaseRetry } from '../db/prisma-retry';
 
 function mapEnvironmentalMetric(metric: EnvironmentalMetric) {
   return {
@@ -19,16 +20,18 @@ function mapEnvironmentalMetric(metric: EnvironmentalMetric) {
 }
 
 export async function getLatestEnvironmentalMetric(userId?: string) {
-  const metric = await prisma.environmentalMetric.findFirst({
-    where: userId
-      ? {
-          OR: [{ userId }, { userId: null }],
-        }
-      : undefined,
-    orderBy: {
-      periodEnd: 'desc',
-    },
-  });
+  const metric = await withTemporaryDatabaseRetry(() =>
+    prisma.environmentalMetric.findFirst({
+      where: userId
+        ? {
+            OR: [{ userId }, { userId: null }],
+          }
+        : undefined,
+      orderBy: {
+        periodEnd: 'desc',
+      },
+    }),
+  );
 
   return metric ? mapEnvironmentalMetric(metric) : null;
 }
