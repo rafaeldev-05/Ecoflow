@@ -2,6 +2,7 @@ import cors, { type CorsOptions } from 'cors';
 import express from 'express';
 
 import { errorMiddleware } from './middlewares/error.middleware';
+import { collectionsRoutes } from './routes/collections.routes';
 import { healthRoutes } from './routes/health.routes';
 import { materialsRoutes } from './routes/materials.routes';
 
@@ -30,5 +31,6 @@ app.use(express.json());
 
 app.use('/api/health', healthRoutes);
 app.use('/api/materials', materialsRoutes);
+app.use('/api/collections', collectionsRoutes);
 
 app.use(errorMiddleware);

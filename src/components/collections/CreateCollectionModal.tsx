@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { createCollection } from "@/integrations/supabase/collections";
+import { createCollection } from "@/services/collectionsApi";
 
 import {
   Dialog,

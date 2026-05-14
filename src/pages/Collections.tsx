@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +21,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { CreateCollectionModal } from '@/components/collections/CreateCollectionModal';
+import { fetchCollections } from '@/services/collectionsApi';
 
 export default function Collections() {
   const { user } = useAuth();
@@ -34,25 +34,7 @@ export default function Collections() {
     queryKey: ['collections', user?.id],
     queryFn: async () => {
       if (!user) return [];
-
-      const { data, error } = await supabase
-        .from('collections')
-        .select(`
-          id,
-          pickup_address,
-          scheduled_date,
-          status,
-          driver_name,
-          material:materials (
-            name,
-            weight_kg
-          )
-        `)
-        .eq('user_id', user.id) // ✅ filtro correto
-        .order('scheduled_date', { ascending: false });
-
-      if (error) throw error;
-      return data;
+      return fetchCollections(user.id);
     },
     enabled: !!user,
   });
@@ -69,7 +51,7 @@ export default function Collections() {
   return (
     <DashboardLayout
       title="Coletas"
-      subtitle="Gerencie solicitações e acompanhe o status das coletas"
+      subtitle="Gerencie solicitacoes e acompanhe o status das coletas"
       actions={
         <Button className="gap-2" onClick={() => setOpen(true)}>
           <Plus size={18} />
@@ -77,7 +59,6 @@ export default function Collections() {
         </Button>
       }
     >
-      {/* 🔹 MODAL */}
       {open && (
         <CreateCollectionModal
           onSuccess={() => {
@@ -124,7 +105,7 @@ export default function Collections() {
                 <TableHeader>
                   <TableRow className="bg-muted/50">
                     <TableHead>Material</TableHead>
-                    <TableHead>Endereço</TableHead>
+                    <TableHead>Endereco</TableHead>
                     <TableHead>Data Agendada</TableHead>
                     <TableHead>Motorista</TableHead>
                     <TableHead>Status</TableHead>
@@ -145,7 +126,7 @@ export default function Collections() {
                       >
                         <TableCell className="font-medium">
                           {collection.material?.name ||
-                            'Material não especificado'}
+                            'Material nao especificado'}
                         </TableCell>
 
                         <TableCell>
@@ -169,7 +150,7 @@ export default function Collections() {
                         </TableCell>
 
                         <TableCell className="text-muted-foreground">
-                          {collection.driver_name || '—'}
+                          {collection.driver_name || '-'}
                         </TableCell>
 
                         <TableCell>
