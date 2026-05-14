@@ -2,6 +2,7 @@ import cors, { type CorsOptions } from 'cors';
 import express from 'express';
 
 import { errorMiddleware } from './middlewares/error.middleware';
+import { authRoutes } from './routes/auth.routes';
 import { collectionsRoutes } from './routes/collections.routes';
 import { dashboardRoutes } from './routes/dashboard.routes';
 import { environmentalMetricsRoutes } from './routes/environmental-metrics.routes';
@@ -32,6 +33,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 app.use('/api/health', healthRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/materials', materialsRoutes);
 app.use('/api/collections', collectionsRoutes);
 app.use('/api/environmental-metrics', environmentalMetricsRoutes);

@@ -8,7 +8,35 @@ O projeto ainda usa Supabase diretamente no frontend Vite/React. O banco atual e
 
 A tabela `users` foi preparada no PostgreSQL Railway para uma futura migracao de autenticacao propria com Prisma. O login, logout, `useAuth` e a tela de autenticacao ainda continuam usando Supabase Auth nesta etapa.
 
-A proxima etapa planejada e criar um fluxo seguro para o primeiro usuario admin e, depois, endpoints server-side para `/api/auth/login`, `/api/auth/me` e `/api/auth/logout`.
+Os endpoints server-side `/api/auth/login`, `/api/auth/me` e `/api/auth/logout` ja existem no backend Express e usam a tabela `users` do PostgreSQL Railway. O frontend ainda nao foi migrado para esses endpoints: login, logout, `useAuth` e a tela de autenticacao continuam usando Supabase Auth nesta etapa.
+
+### Primeiro admin
+
+O script manual `npm run create:admin` cria o primeiro usuario administrador na tabela `users`. Ele usa variaveis de ambiente e nao deve receber senhas hardcoded no codigo.
+
+Exemplo:
+
+```bash
+ADMIN_EMAIL="admin@example.com" ADMIN_PASSWORD="senha-segura" ADMIN_FULL_NAME="Administrador" npm run create:admin
+```
+
+Variaveis opcionais:
+
+- `ADMIN_COMPANY`
+- `ADMIN_PHONE`
+- `ADMIN_AVATAR_URL`
+
+Este script e temporario para preparacao do auth proprio. Supabase Auth, login e logout ainda continuam ativos ate a migracao dos endpoints de autenticacao.
+
+### Endpoints de auth proprio
+
+Endpoints disponiveis no backend:
+
+- `POST /api/auth/login`: recebe `email` e `password`, valida `password_hash` com `bcryptjs` e retorna um JWT com dados seguros do usuario.
+- `GET /api/auth/me`: exige `Authorization: Bearer TOKEN` e retorna o usuario autenticado.
+- `POST /api/auth/logout`: retorna sucesso para o fluxo JWT stateless.
+
+O token JWT usa a variavel server-side `JWT_SECRET`. Essa variavel deve existir somente no backend/API e nunca deve ser exposta no frontend. O frontend Vite/React ainda nao consome esses endpoints nesta etapa.
 
 ## Situacao desejada
 
