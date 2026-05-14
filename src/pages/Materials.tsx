@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +11,7 @@ import { MATERIAL_STATUS } from '@/lib/constants';
 import { Package, Plus, Search, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { CreateMaterialModal } from '@/components/materials/CreateMaterialModal';
+import { fetchMaterials } from '@/services/materialsApi';
 
 import {
   Table,
@@ -27,6 +27,7 @@ import { ptBR } from 'date-fns/locale';
 
 export default function Materials() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [open, setOpen] = useState(false); // ✅ estado do modal no lugar certo
@@ -34,28 +35,8 @@ export default function Materials() {
   const { data: materials, isLoading } = useQuery({
     queryKey: ['materials', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('materials')
-        .select(`
-          id,
-          name,
-          description,
-          quantity,
-          unit,
-          weight_kg,
-          status,
-          created_at,
-          category:material_categories (
-            id,
-            name,
-            icon
-          )
-        `)
-        .eq('user_id', user!.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data;
+      if (!user) return [];
+      return fetchMaterials(user.id);
     },
     enabled: !!user,
   });
@@ -194,6 +175,7 @@ export default function Materials() {
         <CreateMaterialModal
           onSuccess={() => {
             setOpen(false);
+            queryClient.invalidateQueries({ queryKey: ['materials', user?.id] });
           }}
         />
       )}

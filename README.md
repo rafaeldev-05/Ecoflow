@@ -27,6 +27,7 @@ cp .env.example .env
 
 Variaveis publicas do frontend:
 
+- `VITE_API_URL`
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
 
@@ -44,6 +45,17 @@ npm run dev
 ```
 
 A aplicacao roda por padrao em `http://localhost:8080`.
+
+Para rodar a API local:
+
+```bash
+npm run server:dev
+```
+
+A API usa `http://localhost:3001` por padrao e expoe:
+
+- `GET /api/health`
+- `GET /api/health/db`
 
 ## Build
 
@@ -70,6 +82,7 @@ Comandos disponiveis:
 ```bash
 npm run prisma:validate
 npm run prisma:generate
+npm run prisma:migrate
 ```
 
 O app ainda nao usa Prisma em producao. O frontend continua usando Supabase temporariamente.

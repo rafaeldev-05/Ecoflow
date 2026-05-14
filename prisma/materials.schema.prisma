@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model MaterialCategory {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String     @unique
+  description String?
+  icon        String?
+  co2Factor   Decimal?   @default(0) @map("co2_factor") @db.Decimal(10, 4)
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  materials   Material[]
+
+  @@map("material_categories")
+}
+
+model Material {
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  description String?
+  categoryId  String?           @map("category_id") @db.Uuid
+  category    MaterialCategory? @relation(fields: [categoryId], references: [id])
+  weightKg    Decimal           @default(0) @map("weight_kg") @db.Decimal(10, 2)
+  quantity    Int               @default(1)
+  unit        String?           @default("kg")
+  status      String?           @default("pendente")
+  location    String?
+  userId      String            @map("user_id") @db.Uuid
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime          @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("materials")
+}

@@ -1,0 +1,28 @@
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
+
+export async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options?.headers ?? {}),
+    },
+  });
+
+  if (!response.ok) {
+    let message = 'Erro ao comunicar com a API.';
+
+    try {
+      const data = await response.json();
+      if (data?.message) {
+        message = data.message;
+      }
+    } catch {
+      // Mantem a mensagem padrao quando a API nao retorna JSON.
+    }
+
+    throw new Error(message);
+  }
+
+  return response.json();
+}

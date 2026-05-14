@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { createMaterial } from "@/services/materialsApi";
 
 import {
   Dialog,
@@ -29,24 +29,23 @@ export function CreateMaterialModal({ onSuccess }: Props) {
 
     setLoading(true);
 
-    const { error } = await supabase.from("materials").insert({
-      name,
-      description,
-      quantity: 1,
-      unit: "kg",
-      weight_kg: 1,
-      status: "pendente",
-      user_id: user.id,
-      category_id: null, // depois você liga com select
-    });
+    try {
+      await createMaterial({
+        name,
+        description,
+        quantity: 1,
+        unit: "kg",
+        weight_kg: 1,
+        user_id: user.id,
+        category_id: null,
+      });
 
-    setLoading(false);
-
-    if (!error) {
       onSuccess();
-    } else {
+    } catch (error) {
       console.error("Erro ao cadastrar material:", error);
       toast.error("Nao foi possivel cadastrar o material. Tente novamente.");
+    } finally {
+      setLoading(false);
     }
   }
 
