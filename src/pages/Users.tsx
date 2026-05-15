@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { fetchUsers } from '@/services/usersApi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -34,25 +34,7 @@ export default function Users() {
 
   const { data: users, isLoading } = useQuery({
     queryKey: ['users-with-roles'],
-    queryFn: async () => {
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (profilesError) throw profilesError;
-
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('*');
-
-      if (rolesError) throw rolesError;
-
-      return profiles.map(profile => ({
-        ...profile,
-        role: roles.find(r => r.user_id === profile.user_id)?.role || 'operacional'
-      }));
-    },
+    queryFn: fetchUsers,
     enabled: role === 'admin'
   });
 

@@ -9,6 +9,7 @@ import { dashboardRoutes } from './routes/dashboard.routes';
 import { environmentalMetricsRoutes } from './routes/environmental-metrics.routes';
 import { healthRoutes } from './routes/health.routes';
 import { materialsRoutes } from './routes/materials.routes';
+import { usersRoutes } from './routes/users.routes';
 
 const allowedOrigins = [
   'http://localhost:5173',
@@ -43,5 +44,6 @@ app.use('/api/materials', materialsRoutes);
 app.use('/api/collections', collectionsRoutes);
 app.use('/api/environmental-metrics', environmentalMetricsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/users', usersRoutes);
 
 app.use(errorMiddleware);
