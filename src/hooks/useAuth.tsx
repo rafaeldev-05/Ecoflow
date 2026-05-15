@@ -38,7 +38,6 @@ export type AuthUser = {
 };
 
 type AuthSession = {
-  access_token: string;
   user: AuthUser;
 };
 
@@ -64,9 +63,9 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-const AUTH_TOKEN_KEY = 'eco-auth-token';
-const AUTH_USER_KEY = 'eco-auth-user';
 const DEMO_USER_KEY = 'eco-demo-user';
+const LEGACY_AUTH_TOKEN_KEY = 'eco-auth-token';
+const LEGACY_AUTH_USER_KEY = 'eco-auth-user';
 
 type DemoUser = {
   email: string;
@@ -84,38 +83,6 @@ const getDemoUser = (): DemoUser | null => {
     return null;
   }
 };
-
-function isAppRole(value: unknown): value is AppRole {
-  return value === 'admin' || value === 'gestor' || value === 'operacional';
-}
-
-function isApiAuthUser(value: unknown): value is ApiAuthUser {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  const user = value as Partial<ApiAuthUser>;
-
-  return (
-    typeof user.id === 'string' &&
-    typeof user.email === 'string' &&
-    typeof user.fullName === 'string' &&
-    isAppRole(user.role) &&
-    typeof user.isActive === 'boolean'
-  );
-}
-
-function getCachedApiUser(): ApiAuthUser | null {
-  const raw = localStorage.getItem(AUTH_USER_KEY);
-  if (!raw) return null;
-
-  try {
-    const user = JSON.parse(raw);
-    return isApiAuthUser(user) ? user : null;
-  } catch {
-    return null;
-  }
-}
 
 function mapApiUserToAuthUser(apiUser: ApiAuthUser): AuthUser {
   return {
@@ -140,9 +107,8 @@ function mapApiUserToProfile(apiUser: ApiAuthUser): Profile {
   };
 }
 
-function buildSession(token: string, user: AuthUser): AuthSession {
+function buildSession(user: AuthUser): AuthSession {
   return {
-    access_token: token,
     user,
   };
 }
@@ -154,19 +120,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  function applyAuthenticatedUser(apiUser: ApiAuthUser, token: string) {
+  function applyAuthenticatedUser(apiUser: ApiAuthUser) {
     const authUser = mapApiUserToAuthUser(apiUser);
 
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(apiUser));
     setUser(authUser);
-    setSession(buildSession(token, authUser));
+    setSession(buildSession(authUser));
     setProfile(mapApiUserToProfile(apiUser));
     setRole(apiUser.role);
   }
 
   function clearAuthState() {
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-    localStorage.removeItem(AUTH_USER_KEY);
+    localStorage.removeItem(LEGACY_AUTH_TOKEN_KEY);
+    localStorage.removeItem(LEGACY_AUTH_USER_KEY);
     localStorage.removeItem(DEMO_USER_KEY);
     setUser(null);
     setSession(null);
@@ -204,17 +169,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const restoreSession = async () => {
-      const token = localStorage.getItem(AUTH_TOKEN_KEY);
-
-      if (!token) {
-        clearAuthState();
-        setIsLoading(false);
-        return;
-      }
-
       try {
-        const { user: apiUser } = await meRequest(token);
-        applyAuthenticatedUser(apiUser, token);
+        localStorage.removeItem(LEGACY_AUTH_TOKEN_KEY);
+        localStorage.removeItem(LEGACY_AUTH_USER_KEY);
+        const { user: apiUser } = await meRequest();
+        applyAuthenticatedUser(apiUser);
       } catch (error) {
         if (
           error instanceof ApiRequestError &&
@@ -224,11 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        const cachedUser = getCachedApiUser();
-
-        if (cachedUser) {
-          applyAuthenticatedUser(cachedUser, token);
-        }
+        clearAuthState();
       } finally {
         setIsLoading(false);
       }
@@ -240,10 +195,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       localStorage.removeItem(DEMO_USER_KEY);
-      const { token, user: apiUser } = await loginRequest(email, password);
+      localStorage.removeItem(LEGACY_AUTH_TOKEN_KEY);
+      localStorage.removeItem(LEGACY_AUTH_USER_KEY);
+      const { user: apiUser } = await loginRequest(email, password);
 
-      localStorage.setItem(AUTH_TOKEN_KEY, token);
-      applyAuthenticatedUser(apiUser, token);
+      applyAuthenticatedUser(apiUser);
 
       return { error: null };
     } catch (error) {
@@ -258,14 +214,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    const token = localStorage.getItem(AUTH_TOKEN_KEY);
-
-    if (token) {
-      try {
-        await logoutRequest(token);
-      } catch {
-        // Logout local continua mesmo se o token ja estiver invalido.
-      }
+    try {
+      await logoutRequest();
+    } catch {
+      // Logout local continua mesmo se a sessao ja estiver invalida.
     }
 
     clearAuthState();

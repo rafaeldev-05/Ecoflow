@@ -66,7 +66,9 @@ export default function AuthPage() {
         const signupData = data as SignupFormData;
         const { error } = await signUp(signupData.email, signupData.password, signupData.fullName);
         if (error) {
-          if (error.message.includes('already registered')) {
+          if (error.message.includes('Cadastro publico ainda nao foi migrado')) {
+            toast.error('Cadastro publico ainda nao esta disponivel.');
+          } else if (error.message.includes('already registered')) {
             toast.error('Este email já está cadastrado');
           } else {
             toast.error('Erro ao criar conta. Tente novamente.');

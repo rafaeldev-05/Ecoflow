@@ -14,7 +14,6 @@ export type ApiAuthUser = {
 };
 
 type LoginResponse = {
-  token: string;
   user: ApiAuthUser;
 };
 
@@ -26,12 +25,6 @@ type LogoutResponse = {
   message: string;
 };
 
-function authHeaders(token: string) {
-  return {
-    Authorization: `Bearer ${token}`,
-  };
-}
-
 export function loginRequest(email: string, password: string) {
   return apiFetch<LoginResponse>('/api/auth/login', {
     method: 'POST',
@@ -42,16 +35,14 @@ export function loginRequest(email: string, password: string) {
   });
 }
 
-export function meRequest(token: string) {
+export function meRequest() {
   return apiFetch<MeResponse>('/api/auth/me', {
     method: 'GET',
-    headers: authHeaders(token),
   });
 }
 
-export function logoutRequest(token: string) {
+export function logoutRequest() {
   return apiFetch<LogoutResponse>('/api/auth/logout', {
     method: 'POST',
-    headers: authHeaders(token),
   });
 }
