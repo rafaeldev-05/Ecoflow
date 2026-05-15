@@ -7,9 +7,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Prisma models currently migrated to Railway PostgreSQL.
-// Supabase Auth is still active for login/logout until the auth migration
-// is implemented in a later step.
+// Prisma models for the Railway PostgreSQL backend.
+// Auth uses the Express API with JWT stored in an httpOnly cookie.
 
 enum AppRole {
   admin

@@ -2,7 +2,7 @@
 
 Aplicacao web para gestao de residuos, logistica reversa e metricas ESG.
 
-O projeto atualmente usa Vite, React, TypeScript, Tailwind CSS, shadcn/ui e Supabase. Uma base inicial de Prisma foi adicionada apenas para preparar uma futura migracao para PostgreSQL no Railway.
+O projeto usa Vite, React, TypeScript, Tailwind CSS, shadcn/ui, Express, Prisma e PostgreSQL no Railway. O frontend consome a API propria por `VITE_API_URL`; nao acessa o banco diretamente.
 
 ## Requisitos
 
@@ -25,26 +25,21 @@ Crie um arquivo `.env` local a partir do modelo:
 cp .env.example .env
 ```
 
-Variaveis publicas do frontend:
+Variavel publica do frontend:
 
 - `VITE_API_URL`
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
 
 Variaveis privadas de servidor:
 
 - `DATABASE_URL`
 - `JWT_SECRET`
+- `JWT_EXPIRES_IN`
+- `AUTH_COOKIE_NAME`
+- `CORS_ORIGIN`
 
-Variaveis privadas nao devem ser acessadas pelo Vite/React. Nunca coloque `SUPABASE_SERVICE_ROLE_KEY`, connection strings privadas, senhas ou tokens secretos no frontend.
+Variaveis privadas nao devem ser acessadas pelo Vite/React. Nunca coloque `DATABASE_URL`, senhas ou tokens secretos no frontend. Nao crie `VITE_DATABASE_URL`.
 
 ## Desenvolvimento
-
-```bash
-npm run dev
-```
-
-A aplicacao roda por padrao em `http://localhost:8080`.
 
 Para rodar a API local:
 
@@ -56,6 +51,40 @@ A API usa `http://localhost:3001` por padrao e expoe:
 
 - `GET /api/health`
 - `GET /api/health/db`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `POST /api/auth/logout`
+
+Para rodar o frontend:
+
+```bash
+npm run dev
+```
+
+A aplicacao roda por padrao em `http://localhost:8080`.
+
+## Autenticacao
+
+A autenticacao usa a API propria com JWT em cookie httpOnly. O frontend nao armazena token manualmente e as chamadas para a API usam `credentials: "include"`.
+
+Endpoints de dados protegidos exigem `requireAuth`; rotas administrativas, como `/api/users`, tambem exigem `requireRole(["admin"])`.
+
+## Banco de dados
+
+O banco atual e PostgreSQL no Railway, acessado pelo backend com Prisma. Beekeeper Studio pode ser usado apenas como cliente visual para consultar o banco; ele nao hospeda os dados.
+
+Prisma:
+
+- schema: `prisma/schema.prisma`
+- client server-side: `src/server/db/prisma.ts`
+
+Comandos disponiveis:
+
+```bash
+npm run prisma:validate
+npm run prisma:generate
+npm run prisma:migrate
+```
 
 ## Build
 
@@ -70,42 +99,10 @@ npm run lint
 npm run test
 ```
 
-## Prisma
-
-Prisma foi preparado para uso futuro no backend/API:
-
-- schema: `prisma/schema.prisma`
-- client server-side: `src/server/db/prisma.ts`
-
-Comandos disponiveis:
-
-```bash
-npm run prisma:validate
-npm run prisma:generate
-npm run prisma:migrate
-```
-
-O app ainda nao usa Prisma em producao. O frontend continua usando Supabase temporariamente.
-
-## Banco de dados
-
-Estado atual:
-
-- Supabase ainda e usado como banco/API/Auth.
-- As migrations atuais ficam em `supabase/migrations`.
-
-Estado futuro planejado:
-
-- PostgreSQL no Railway.
-- Prisma no backend/API.
-- Frontend chamando endpoints proprios em vez de acessar o banco diretamente.
-
-Leia `docs/migracao-supabase-railway.md` antes de iniciar a migracao.
-
 ## Seguranca
 
 - Nunca versione `.env`.
 - Use `.env.example` somente como modelo.
 - Credenciais que ja foram expostas devem ser rotacionadas.
 - Como o `.env` ja entrou no historico Git, avalie uma limpeza planejada do historico antes de tornar o repositorio publico ou compartilhar novamente.
-- `SUPABASE_SERVICE_ROLE_KEY` so pode existir em backend/API seguro, nunca no frontend.
+- Configure `CORS_ORIGIN` com a origem explicita do frontend; nao use `"*"`.
