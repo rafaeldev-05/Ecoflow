@@ -41,6 +41,11 @@ export async function postLogin(request: Request, response: Response) {
     return;
   }
 
+  if (result.status !== 'ok') {
+    response.status(401).json({ message: 'Credenciais invalidas.' });
+    return;
+  }
+
   setAuthCookie(response, result.token, result.tokenMaxAgeMs);
 
   response.json({ user: result.user });

@@ -2,10 +2,10 @@ import 'dotenv/config';
 
 import { app } from './app';
 
-const port = Number(process.env.PORT ?? 3001);
+const port = process.env.PORT ? Number(process.env.PORT) : 3001;
 
 const server = app.listen(port, () => {
-  console.log(`EcoFlow API running on http://localhost:${port}`);
+  console.log(`EcoFlow API running on port ${port}`);
 });
 
 process.on('SIGTERM', () => {

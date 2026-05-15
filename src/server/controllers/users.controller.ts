@@ -37,6 +37,10 @@ function handleUserError(error: unknown, response: Response) {
   throw error;
 }
 
+function getRouteParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export async function getUsers(_request: Request, response: Response) {
   const users = await listUsers();
   response.json(users);
@@ -83,6 +87,13 @@ export async function postUser(request: Request, response: Response) {
 }
 
 export async function putUser(request: Request, response: Response) {
+  const userId = getRouteParam(request.params.id);
+
+  if (!userId) {
+    response.status(400).json({ message: 'Usuario invalido.' });
+    return;
+  }
+
   const body = request.body as Partial<UpdateUserInput>;
   const input: UpdateUserInput = {};
 
@@ -127,7 +138,7 @@ export async function putUser(request: Request, response: Response) {
   input.phone = optionalString(body.phone);
 
   try {
-    const user = await updateUser(request.params.id, input);
+    const user = await updateUser(userId, input);
     response.json(user);
   } catch (error) {
     handleUserError(error, response);
@@ -135,8 +146,15 @@ export async function putUser(request: Request, response: Response) {
 }
 
 export async function patchDeactivateUser(request: Request, response: Response) {
+  const userId = getRouteParam(request.params.id);
+
+  if (!userId) {
+    response.status(400).json({ message: 'Usuario invalido.' });
+    return;
+  }
+
   try {
-    const user = await deactivateUser(request.params.id);
+    const user = await deactivateUser(userId);
     response.json(user);
   } catch (error) {
     handleUserError(error, response);
