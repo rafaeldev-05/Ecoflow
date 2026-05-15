@@ -1,4 +1,5 @@
 import cors, { type CorsOptions } from 'cors';
+import cookieParser from 'cookie-parser';
 import express from 'express';
 
 import { errorMiddleware } from './middlewares/error.middleware';
@@ -12,11 +13,14 @@ import { materialsRoutes } from './routes/materials.routes';
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:8080',
+  'http://localhost:8081',
+  'http://localhost:8082',
   'http://localhost:3000',
   process.env.CORS_ORIGIN,
 ].filter(Boolean);
 
 const corsOptions: CorsOptions = {
+  credentials: true,
   origin(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
@@ -30,6 +34,7 @@ const corsOptions: CorsOptions = {
 export const app = express();
 
 app.use(cors(corsOptions));
+app.use(cookieParser());
 app.use(express.json());
 
 app.use('/api/health', healthRoutes);

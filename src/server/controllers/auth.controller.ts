@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 
+import { clearAuthCookie, setAuthCookie } from '../auth/cookies';
 import { loginWithPassword } from '../services/auth.service';
 
 function isNonEmptyString(value: unknown): value is string {
@@ -40,10 +41,9 @@ export async function postLogin(request: Request, response: Response) {
     return;
   }
 
-  response.json({
-    token: result.token,
-    user: result.user,
-  });
+  setAuthCookie(response, result.token, result.tokenMaxAgeMs);
+
+  response.json({ user: result.user });
 }
 
 export async function getMe(request: Request, response: Response) {
@@ -53,6 +53,8 @@ export async function getMe(request: Request, response: Response) {
 }
 
 export async function postLogout(_request: Request, response: Response) {
+  clearAuthCookie(response);
+
   response.json({
     message: 'Logout realizado com sucesso.',
   });

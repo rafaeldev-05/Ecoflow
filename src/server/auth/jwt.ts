@@ -1,5 +1,5 @@
 import type { AppRole } from '@prisma/client';
-import jwt from "jsonwebtoken";
+import jwt from 'jsonwebtoken';
 
 import type { JwtPayload, SignOptions } from 'jsonwebtoken';
 
@@ -9,7 +9,7 @@ export type AuthTokenPayload = {
   role: AppRole;
 };
 
-const tokenExpiresIn: SignOptions['expiresIn'] = '1d';
+const defaultTokenExpiresIn: SignOptions['expiresIn'] = '1d';
 const appRoles: AppRole[] = ['admin', 'gestor', 'operacional'];
 
 function getJwtSecret() {
@@ -26,6 +26,35 @@ function isAppRole(value: unknown): value is AppRole {
   return typeof value === 'string' && appRoles.includes(value as AppRole);
 }
 
+export function getJwtExpiresIn(): SignOptions['expiresIn'] {
+  return (process.env.JWT_EXPIRES_IN?.trim() || defaultTokenExpiresIn) as SignOptions['expiresIn'];
+}
+
+export function getJwtMaxAgeMs() {
+  const expiresIn = getJwtExpiresIn();
+
+  if (typeof expiresIn === 'number') {
+    return expiresIn * 1000;
+  }
+
+  const match = /^(\d+)([smhd])$/.exec(expiresIn);
+
+  if (!match) {
+    return undefined;
+  }
+
+  const value = Number(match[1]);
+  const unit = match[2];
+  const multipliers = {
+    s: 1000,
+    m: 60 * 1000,
+    h: 60 * 60 * 1000,
+    d: 24 * 60 * 60 * 1000,
+  };
+
+  return value * multipliers[unit as keyof typeof multipliers];
+}
+
 export function signAuthToken(payload: AuthTokenPayload) {
   return jwt.sign(
     {
@@ -34,7 +63,7 @@ export function signAuthToken(payload: AuthTokenPayload) {
     },
     getJwtSecret(),
     {
-      expiresIn: tokenExpiresIn,
+      expiresIn: getJwtExpiresIn(),
       subject: payload.sub,
     },
   );

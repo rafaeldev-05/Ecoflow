@@ -6,23 +6,39 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 const saltRounds = 12;
 
-function requiredEnv(name: string) {
-  const value = process.env[name]?.trim();
+function readCliArg(name: string) {
+  const prefix = `--${name}=`;
+  const arg = process.argv.slice(2).find((value) => value.startsWith(prefix));
+
+  return arg?.slice(prefix.length).trim();
+}
+
+function readInput(envName: string, cliName: string) {
+  return readCliArg(cliName) || process.env[envName]?.trim();
+}
+
+function requiredInput(envName: string, cliName: string) {
+  const value = readInput(envName, cliName);
 
   if (!value) {
-    throw new Error(`${name} e obrigatorio.`);
+    throw new Error(`${envName} ou --${cliName}=... e obrigatorio.`);
   }
 
   return value;
 }
 
+function isExplicitlyEnabled(envName: string, cliName: string) {
+  return process.argv.includes(`--${cliName}`) || process.env[envName]?.trim().toLowerCase() === 'true';
+}
+
 async function main() {
-  const email = requiredEnv('ADMIN_EMAIL').toLowerCase();
-  const password = requiredEnv('ADMIN_PASSWORD');
-  const fullName = requiredEnv('ADMIN_FULL_NAME');
+  const email = requiredInput('ADMIN_EMAIL', 'email').toLowerCase();
+  const password = requiredInput('ADMIN_PASSWORD', 'password');
+  const fullName = requiredInput('ADMIN_FULL_NAME', 'full-name');
   const company = process.env.ADMIN_COMPANY?.trim() || null;
   const phone = process.env.ADMIN_PHONE?.trim() || null;
   const avatarUrl = process.env.ADMIN_AVATAR_URL?.trim() || null;
+  const promoteExisting = isExplicitlyEnabled('ADMIN_PROMOTE_EXISTING', 'promote-existing');
 
   if (password.length < 8) {
     throw new Error('ADMIN_PASSWORD deve ter pelo menos 8 caracteres.');
@@ -34,11 +50,34 @@ async function main() {
       id: true,
       email: true,
       role: true,
+      isActive: true,
     },
   });
 
   if (existingUser) {
-    console.log(`Usuario ${existingUser.email} ja existe com role ${existingUser.role}. Nenhum usuario foi criado.`);
+    if (!promoteExisting) {
+      console.log(
+        `Usuario ${existingUser.email} ja existe com role ${existingUser.role}. Nenhum usuario foi criado ou atualizado.`,
+      );
+      console.log('Para promover explicitamente para admin, use ADMIN_PROMOTE_EXISTING=true ou --promote-existing.');
+      return;
+    }
+
+    const promotedUser = await prisma.user.update({
+      where: { email },
+      data: {
+        role: 'admin',
+        isActive: true,
+      },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        isActive: true,
+      },
+    });
+
+    console.log(`Usuario existente promovido para admin com sucesso: ${promotedUser.email} (${promotedUser.id})`);
     return;
   }
 

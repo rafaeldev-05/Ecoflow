@@ -12,14 +12,40 @@ Nesta etapa, Auth ainda nao foi migrado. Supabase Auth continua ativo, e login/l
 
 Nao foram criadas tabelas `auth.users`, `profiles` ou `user_roles` no Prisma para esta etapa. Tambem nao foram criados endpoints de Auth, middleware de permissao ou usuario admin novo.
 
-A proxima etapa recomendada e criar um fluxo seguro para o primeiro admin e implementar endpoints server-side de Auth, mantendo `DATABASE_URL` somente no backend/API.
+Endpoints server-side de Auth foram preparados no backend Express, mas o frontend ainda nao foi migrado para usa-los. O token da API propria e gravado em cookie httpOnly, nao em `localStorage`.
 
-### Proximos passos de Auth
+### Script de admin
 
-- Criar script ou endpoint seguro para criar o primeiro usuario admin.
-- Criar `POST /api/auth/login`, `GET /api/auth/me` e `POST /api/auth/logout`.
-- Criar middleware `requireAuth` e `requireRole`.
-- Depois disso, migrar gradualmente `useAuth` e `Users.tsx` para a API propria.
+O primeiro usuario admin deve ser criado apenas por comando explicito:
+
+```bash
+ADMIN_EMAIL="admin@example.com" ADMIN_PASSWORD="senha-segura" ADMIN_FULL_NAME="Admin" npm run admin:create
+```
+
+No PowerShell:
+
+```powershell
+$env:ADMIN_EMAIL="admin@example.com"
+$env:ADMIN_PASSWORD="senha-segura"
+$env:ADMIN_FULL_NAME="Admin"
+npm run admin:create
+```
+
+Se o email ja existir, o script nao duplica usuarios. Para promover um usuario existente para admin, a acao precisa ser explicita com `ADMIN_PROMOTE_EXISTING=true` ou `--promote-existing`.
+
+### Endpoints de Auth proprio
+
+- `POST /api/auth/login`: valida email/senha e cria o cookie httpOnly.
+- `GET /api/auth/me`: exige cookie valido e retorna o usuario autenticado.
+- `POST /api/auth/logout`: limpa o cookie.
+
+Em desenvolvimento, o cookie usa `httpOnly: true`, `sameSite: "lax"` e `secure: false`. Em producao, usa `httpOnly: true`, `sameSite: "none"` e `secure: true`, adequado quando frontend e API estao em dominios diferentes.
+
+### Proximos passos de frontend
+
+- Adaptar `useAuth` e `Auth.tsx` para consumir a API propria.
+- Manter o fluxo visual atual.
+- Depois migrar gradualmente `Users.tsx` para a API propria.
 
 ## Situacao desejada
 

@@ -1,7 +1,7 @@
 import type { AppRole, User } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
-import { signAuthToken } from '../auth/jwt';
+import { getJwtMaxAgeMs, signAuthToken } from '../auth/jwt';
 import { prisma } from '../db/prisma';
 import { withTemporaryDatabaseRetry } from '../db/prisma-retry';
 
@@ -25,6 +25,7 @@ export type LoginResult =
   | {
       status: 'ok';
       token: string;
+      tokenMaxAgeMs?: number;
       user: SafeAuthUser;
     }
   | {
@@ -94,6 +95,7 @@ export async function loginWithPassword(email: string, password: string): Promis
   return {
     status: 'ok',
     token,
+    tokenMaxAgeMs: getJwtMaxAgeMs(),
     user: safeUser,
   };
 }

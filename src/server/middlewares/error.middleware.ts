@@ -15,6 +15,16 @@ export const errorMiddleware: ErrorRequestHandler = (error, _request, response, 
     return;
   }
 
+  const statusCode = typeof error?.statusCode === 'number' ? error.statusCode : error?.status;
+
+  if (typeof statusCode === 'number' && statusCode >= 400 && statusCode < 500) {
+    response.status(statusCode).json({
+      status: 'error',
+      message: 'Requisicao invalida.',
+    });
+    return;
+  }
+
   response.status(500).json({
     status: 'error',
     message: 'Internal server error.',

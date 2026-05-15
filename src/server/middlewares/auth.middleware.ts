@@ -1,29 +1,14 @@
 import type { AppRole } from '@prisma/client';
 import type { NextFunction, Request, Response } from 'express';
 
+import { getAuthCookieName } from '../auth/cookies';
 import { verifyAuthToken } from '../auth/jwt';
 import { getSafeUserById } from '../services/auth.service';
 
-function getBearerToken(request: Request) {
-  const authorization = request.header('authorization');
-
-  if (!authorization) {
-    return null;
-  }
-
-  const [scheme, token] = authorization.split(' ');
-
-  if (scheme !== 'Bearer' || !token) {
-    return null;
-  }
-
-  return token;
-}
-
 export async function requireAuth(request: Request, response: Response, next: NextFunction) {
-  const token = getBearerToken(request);
+  const token = request.cookies?.[getAuthCookieName()];
 
-  if (!token) {
+  if (typeof token !== 'string' || !token) {
     response.status(401).json({ message: 'Token de autenticacao obrigatorio.' });
     return;
   }
