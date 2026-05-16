@@ -4,6 +4,7 @@ import type { Request, Response } from 'express';
 import {
   createCollection,
   listCollections,
+  materialExistsForUser,
   type CreateCollectionInput,
 } from '../services/collections.service';
 
@@ -24,6 +25,10 @@ function isValidDateString(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date(`${value}T00:00:00.000Z`).getTime());
 }
 
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 export async function getCollections(request: Request, response: Response) {
   const userId = typeof request.query.userId === 'string' ? request.query.userId : undefined;
   const collections = await listCollections(userId);
@@ -33,14 +38,20 @@ export async function getCollections(request: Request, response: Response) {
 
 export async function postCollection(request: Request, response: Response) {
   const body = request.body as Partial<CreateCollectionInput>;
+  const userId = request.user?.id;
 
-  if (!isNonEmptyString(body.user_id)) {
-    response.status(400).json({ message: 'Usuario e obrigatorio.' });
+  if (!isNonEmptyString(userId)) {
+    response.status(401).json({ message: 'Autenticacao obrigatoria.' });
     return;
   }
 
   if (!isNonEmptyString(body.material_id)) {
     response.status(400).json({ message: 'Material e obrigatorio.' });
+    return;
+  }
+
+  if (!isUuid(body.material_id)) {
+    response.status(400).json({ message: 'Material invalido.' });
     return;
   }
 
@@ -59,8 +70,15 @@ export async function postCollection(request: Request, response: Response) {
     return;
   }
 
+  const materialExists = await materialExistsForUser(body.material_id, userId);
+
+  if (!materialExists) {
+    response.status(404).json({ message: 'Material nao encontrado para este usuario.' });
+    return;
+  }
+
   const collection = await createCollection({
-    user_id: body.user_id,
+    user_id: userId,
     material_id: body.material_id,
     pickup_address: body.pickup_address.trim(),
     scheduled_date: body.scheduled_date,

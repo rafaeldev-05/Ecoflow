@@ -66,6 +66,22 @@ export async function listCollections(userId?: string) {
   return collections.map(mapCollection);
 }
 
+export async function materialExistsForUser(materialId: string, userId: string) {
+  const material = await withTemporaryDatabaseRetry(() =>
+    prisma.material.findFirst({
+      where: {
+        id: materialId,
+        userId,
+      },
+      select: {
+        id: true,
+      },
+    }),
+  );
+
+  return Boolean(material);
+}
+
 export async function createCollection(input: CreateCollectionInput) {
   const collection = await withTemporaryDatabaseRetry(() =>
     prisma.collection.create({
